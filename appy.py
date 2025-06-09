@@ -396,7 +396,7 @@ if st.session_state.vista == "panel":
             tienda = st.session_state.tienda_seleccionada
             productos = obtener_menu_tienda(tienda)
 
-            st.markdown(f"<h2 style='text-align:center;'>🍽️ Menú de {tienda}</h2>", unsafe_allow_html=True)
+            st.markdown(f"<h2 style='text-align:center;'>Menú de {tienda}</h2>", unsafe_allow_html=True)
 
             if productos:
                 for i in range(0, len(productos), 3):
@@ -526,11 +526,11 @@ if st.session_state.vista == "panel":
 
             col1, col2 = st.columns(2)
             with col1:
-                if st.button("💳 Pagar"):
+                if st.button("Pagar"):
                     st.session_state.vista_carrito = "pago"
                     st.rerun()
             with col2:
-                if st.button("🧹 Vaciar carrito"):
+                if st.button(" Vaciar carrito"):
                     st.session_state.carrito = []
                     st.rerun()
 
@@ -591,7 +591,7 @@ if st.session_state.vista == "panel":
             
     # =============== VISTA: HORARIO DE RECOJO ===============
     elif selected == "Carrito" and st.session_state.vista_carrito == "horario":
-        st.markdown("<h2 style='text-align:center;'>⏰ Selecciona tu horario de recojo</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align:center;'>Selecciona tu horario de recojo</h2>", unsafe_allow_html=True)
 
         hora_min = datetime.strptime("11:00", "%H:%M").time()
         hora_max = datetime.strptime("15:00", "%H:%M").time()
