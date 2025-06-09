@@ -749,16 +749,15 @@ if st.session_state.vista == "panel":
             
             st.markdown("<h2 style='text-align:center;'>💳 Pago para Usuario Premium</h2>", unsafe_allow_html=True)
             st.markdown("Escanea este código QR para pagar la suscripción vía Yape:")
-            col1, col2, col3 = st.columns([2, 1, 2])
-            with col2:
-                st.image("img/qr.jpeg", width=200)
-                st.markdown("**Número:** 947 651 798")
+        
+            st.image("img/qr.jpeg", width=200)
+            st.markdown("**Número:** 947 651 798")
 
-                if st.button("✅ Confirmar suscripción"):
-                    st.session_state.plan_usuario = "Premium"
-                    st.session_state.vista_servicios = "planes"
-                    st.success("🌟 Plan Premium activado correctamente.")
-                    st.rerun()
+            if st.button("✅ Confirmar suscripción"):
+                 st.session_state.plan_usuario = "Premium"
+                 st.session_state.vista_servicios = "planes"
+                 st.success("🌟 Plan Premium activado correctamente.")
+                 st.rerun()
 
             if st.button("⬅ Volver sin pagar"):
                 st.session_state.vista_servicios = "planes"
