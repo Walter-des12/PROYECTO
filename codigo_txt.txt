@@ -1,0 +1,372 @@
+import streamlit as st
+import pandas as pd
+import hashlib
+import os
+import pathlib
+
+
+st.set_page_config(page_title="QOMI - Iniciar sesión", layout="centered")
+
+if "vista" not in st.session_state:
+    st.session_state.vista = "login"
+
+USUARIOS_PATH = "usuarios.xlsx"
+if os.path.exists(USUARIOS_PATH):
+    df_usuarios = pd.read_excel(USUARIOS_PATH)
+else:
+    df_usuarios = pd.DataFrame(columns=["usuario", "password_hash"])
+    df_usuarios.to_excel(USUARIOS_PATH, index=False)
+
+def autenticar(usuario, password):
+    hash_pw = hashlib.sha256(password.encode()).hexdigest()
+    user = df_usuarios[df_usuarios["usuario"] == usuario]
+    return not user.empty and user.iloc[0]["password_hash"] == hash_pw
+
+def registrar_usuario(usuario, password):
+    if usuario in df_usuarios["usuario"].values:
+        return False, "El usuario ya existe."
+    hash_pw = hashlib.sha256(password.encode()).hexdigest()
+    nuevo = pd.DataFrame([[usuario, hash_pw]], columns=["usuario", "password_hash"])
+    df_final = pd.concat([df_usuarios, nuevo], ignore_index=True)
+    df_final.to_excel(USUARIOS_PATH, index=False)
+    return True, "Usuario registrado correctamente."
+
+# CSS estilo enlace
+st.markdown("""
+<style>
+.link-button > button {
+    color: #1a73e8;
+    background: none!important;
+    border: none;
+    padding: 0!important;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+.custom-red > button {
+    background-color: #f44336 !important;
+    color: white !important;
+    font-size: 16px !important;
+    padding: 10px 24px !important;
+    border-radius: 10px !important;
+    border: none !important;
+    cursor: pointer;
+}
+.custom-red > button:hover {
+    background-color: #d32f2f !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# LOGIN
+if st.session_state.vista == "login":
+    st.markdown("<h2 style='text-align: center; font-size: 32px; margin-bottom: 20px;'>INICIAR SESION</h2>", unsafe_allow_html=True)
+
+    st.write("¿Es tu primera vez?")
+    if st.button("Regístrate", key="to_register", help="Ir a registro", type="primary"):
+        st.session_state.vista = "registro"
+        st.rerun()
+
+    usuario = st.text_input("Email *")
+    password = st.text_input("Contraseña *", type="password")
+
+    if st.button("¿Olvidaste tu contraseña?", key="to_recover", help="Ir a recuperación"):
+        st.session_state.vista = "recuperar"
+        st.rerun()
+        
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        st.markdown('<div class="custom-red">', unsafe_allow_html=True)
+        if st.button("Iniciar sesión"):
+            if not usuario or not password:
+                st.warning("⚠️ Completa todos los campos.")
+            elif autenticar(usuario, password):
+                if autenticar(usuario, password):
+                    st.success("Bienvenido.")
+                    st.session_state.usuario = usuario
+                    st.session_state.vista = "panel"
+                    st.rerun()
+
+            else:
+                st.error("❌ Usuario o contraseña incorrectos.")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+
+# REGISTRO
+elif st.session_state.vista == "registro":
+    st.markdown("## Crear cuenta")
+
+    nuevo_usuario = st.text_input("Email *", key="new_user")
+    nueva_pass = st.text_input("Contraseña *", type="password", key="new_pass")
+
+    if st.button("Registrarme"):
+        if not nuevo_usuario or not nueva_pass:
+            st.warning("Completa todos los campos.")
+        else:
+            ok, msg = registrar_usuario(nuevo_usuario, nueva_pass)
+            if ok:
+                st.success(msg)
+                st.session_state.vista = "login"
+                st.rerun()
+            else:
+                st.warning(msg)
+
+    if st.button("⬅ Volver al inicio", key="back_login1"):
+        st.session_state.vista = "login"
+        st.rerun()
+
+# RECUPERAR
+elif st.session_state.vista == "recuperar":
+    st.markdown("## Recuperar contraseña")
+
+    email = st.text_input("Correo registrado *")
+
+    if st.button("Enviar enlace"):
+        if email in df_usuarios["usuario"].values:
+            st.success("Correo enviado (simulado).")
+        else:
+            st.warning("Correo no registrado.")
+
+    if st.button("⬅ Volver al inicio", key="back_login2"):
+        st.session_state.vista = "login"
+        st.rerun()
+
+#-------------------------------------
+
+TIENDAS = [
+    {"nombre": "Cafetería Piso 2", "imagen": "img/tienda1.jpg"},
+    {"nombre": "Snack Express", "imagen": "img/tienda2.jpg"},
+    {"nombre": "Dulce Tentación", "imagen": "img/tienda3.jpg"},
+    {"nombre": "La Sanguchería", "imagen": "img/tienda2.jpg"}
+]
+
+MENUS = {
+    "Cafetería Piso 2": [
+        {"nombre": "Ají de Gallina", "precio": 10.5, "imagen": "img/ajigallina.jpeg"},
+        {"nombre": "Arroz con Pollo", "precio": 9.8, "imagen": "img/arrozconpollo.jpg"},
+        {"nombre": "Chaufa", "precio": 10.0, "imagen": "img/chaufa.jpeg"},
+        {"nombre": "Milanesa", "precio": 11.0, "imagen": "img/milanesa.jpeg"},
+    ]
+}
+
+
+if st.session_state.vista == "panel":
+    
+    # ========== NAVBAR CSS ==========
+    st.markdown("""
+    <style>
+    .navbar {
+        display: flex;
+        justify-content: center;
+        gap: 40px;
+        font-family: 'Segoe UI', sans-serif;
+        margin-top: 10px;
+        margin-bottom: 30px;
+    }
+    .nav-item {
+        color: #888;
+        font-size: 16px;
+        cursor: pointer;
+        position: relative;
+        transition: all 0.2s ease-in-out;
+    }
+    .nav-item:hover {
+        color: #f44336;
+    }
+    .nav-item.active {
+        color: #f44336;
+    }
+    .nav-item.active::after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: #f44336;
+        border-radius: 50%;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Inicializar si no existe
+    if "nav" not in st.session_state:
+        st.session_state.nav = "Inicio"
+    if "tienda_seleccionada" not in st.session_state:
+        st.session_state.tienda_seleccionada = None
+
+    # ====== NAVEGACIÓN CON RADIO ======
+    menu_items = ["Inicio", "Tiendas", "Reservas", "Servicios", "Carrito"]
+
+    selected = st.radio(
+        label="",
+        options=menu_items,
+        horizontal=True,
+        index=menu_items.index(st.session_state.nav)
+    )
+    st.session_state.nav = selected
+        
+
+    if selected == "Inicio":
+        st.markdown(f"<h2 style='text-align:center;'>👋 Bienvenido a Qomi, {st.session_state.usuario}</h2>", unsafe_allow_html=True)
+
+        st.markdown("""
+        <p style='text-align:center; font-size:18px;'>
+            Somos una app donde encontrarás <strong>una variedad de comida</strong> 🍲,<br>
+            disponible en nuestras tiendas universitarias y asociadas.
+        </p>
+        """, unsafe_allow_html=True)
+
+        st.markdown("<hr>", unsafe_allow_html=True)
+
+        col1, col2 = st.columns([1, 1])
+
+        with col1:
+            if st.button("🚪 Cerrar sesión"):
+                st.session_state.vista = "login"
+                st.session_state.usuario = None
+                st.session_state.nav = "Inicio"
+                st.rerun()
+
+        with col2:
+            st.markdown("""
+            <div style="text-align:right;">
+            📬 <strong>Contacto:</strong> qomi@gmail.com<br>
+            ☎️ <strong>Teléfono:</strong> 999-999-999
+            </div>
+            """, unsafe_allow_html=True)
+
+
+        # Asegurar estados
+    if "tienda_seleccionada" not in st.session_state:
+        st.session_state.tienda_seleccionada = None
+    if "vista_tiendas" not in st.session_state:
+        st.session_state.vista_tiendas = "catalogo"  # puede ser "catalogo" o "menu"
+
+    # ===================== SECCIÓN TIENDAS =====================
+    if selected == "Tiendas":
+
+        # ----------- CATÁLOGO DE TIENDAS -----------
+        if st.session_state.vista_tiendas == "catalogo":
+            st.markdown("<h2 style='text-align:center;'>🏪 Nuestras Tiendas</h2>", unsafe_allow_html=True)
+            st.write("Selecciona una tienda para continuar:")
+
+            cols = st.columns(2)
+
+            for i, tienda in enumerate(TIENDAS):
+                with cols[i % 2]:
+                    st.image(tienda["imagen"], width=300, caption=tienda["nombre"])
+                    if st.button(f"Seleccionar {tienda['nombre']}", key=f"btn_tienda_{i}"):
+                        st.session_state.tienda_seleccionada = tienda["nombre"]
+                        st.session_state.vista_tiendas = "menu"
+                        st.rerun()
+
+        # ----------- MENÚ DE LA TIENDA -----------
+        elif st.session_state.vista_tiendas == "menu":
+            tienda = st.session_state.tienda_seleccionada
+            productos = MENUS.get(tienda, [])
+
+            st.markdown(f"<h2 style='text-align:center;'>🍽️ Menú de {tienda}</h2>", unsafe_allow_html=True)
+
+            if productos:
+                for i in range(0, len(productos), 3):
+                    row = productos[i:i+3]
+                    cols = st.columns(len(row))
+                    for j, producto in enumerate(row):
+                        with cols[j]:
+                            st.markdown(f"""
+                            <div style="background:#fff; border-radius:15px; padding:20px; text-align:center;
+                                        box-shadow:0 4px 10px rgba(0,0,0,0.08); margin-bottom:25px;">
+                                <img src="{producto['imagen']}" style="width:120px; height:120px; object-fit:cover;
+                                    border-radius:50%; margin-bottom:10px;" />
+                                <h4 style="margin:10px 0;">{producto['nombre']}</h4>
+                                <p style="font-size:18px; margin:5px 0; color:#f44336;">
+                                    <strong>S/. {producto['precio']:.2f}</strong>
+                                </p>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                  
+                            if st.button(f"Agregar {producto['nombre']}", key=f"add_{producto['nombre']}"):
+                                st.session_state.carrito.append(producto)
+                                st.success(f"🛒 {producto['nombre']} agregado al carrito")
+
+            else:           
+                st.warning("Esta tienda aún no tiene menú definido.")
+
+            if st.button("⬅ Volver a las tiendas"):
+                st.session_state.vista_tiendas = "catalogo"
+                st.session_state.tienda_seleccionada = None
+                st.rerun()
+
+    
+        # Inicialización de estados
+    if "carrito" not in st.session_state:
+        st.session_state.carrito = []
+    if "vista_carrito" not in st.session_state:
+        st.session_state.vista_carrito = "resumen"
+
+    # =============== VISTA: CARRITO ===============
+    if selected == "Carrito" and st.session_state.vista_carrito == "resumen":
+        st.markdown("<h2 style='text-align:center;'>🛒 Tu Carrito</h2>", unsafe_allow_html=True)
+
+        if not st.session_state.carrito:
+            st.info("Tu carrito está vacío.")
+        else:
+            total = 0
+            for producto in st.session_state.carrito:
+                st.markdown(f"""
+                    <div style="display:flex; align-items:center; justify-content:space-between;
+                                padding:10px 15px; border-bottom:1px solid #eee;">
+                        <span>{producto['nombre']}</span>
+                        <span><strong>S/. {producto['precio']:.2f}</strong></span>
+                    </div>
+                """, unsafe_allow_html=True)
+                total += producto["precio"]
+
+            st.markdown(f"<h4 style='text-align:right;'>Total: <span style='color:#f44336;'>S/. {total:.2f}</span></h4>", unsafe_allow_html=True)
+
+            if st.button("💳 Pagar"):
+                st.session_state.vista_carrito = "pago"
+                st.rerun()
+
+            if st.button("🧹 Vaciar carrito"):
+                st.session_state.carrito = []
+                st.rerun()
+
+
+    # =============== VISTA: MÉTODO DE PAGO ===============
+    elif selected == "Carrito" and st.session_state.vista_carrito == "pago":
+        st.markdown("<h2 style='text-align:center;'>💳 Método de Pago</h2>", unsafe_allow_html=True)
+
+        metodo = st.radio(
+            "Selecciona una opción:",
+            ["Yape", "Efectivo"],
+            horizontal=True,
+            key="metodo_pago"
+        )
+
+        if metodo == "Yape":
+            st.markdown("#### 📱 Escanea este código QR con Yape:")
+            st.image("img/qr.png", width=200)  # asegúrate de tener esta imagen
+            st.markdown("**Número:** 999-999-999")
+
+        elif metodo == "Efectivo":
+            st.markdown("#### 💵 Pagarás al momento de recoger tu pedido.")
+            st.markdown("Recuerda llevar sencillo.")
+
+        if st.button("✅ Confirmar pedido"):
+            st.success("🎉 Pedido confirmado. ¡Gracias por usar QOMI!")
+            st.session_state.carrito = []
+            st.session_state.vista_carrito = "resumen"
+            st.rerun()
+
+        if st.button("⬅ Volver al carrito"):
+            st.session_state.vista_carrito = "resumen"
+            st.rerun()
